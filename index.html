@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCP 體外心臟節律器</title>
+<style>
+  body {
+    font-family: "Noto Sans TC", Arial, sans-serif;
+    background-color: #111; /* 深色背景 */
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+  }
+  h2 {
+    text-align: center;
+    color: #5dc1ff; /* 標題顏色 */
+    margin-bottom: 30px;
+  }
+  /* 區塊容器樣式 */
+  .section {
+    background-color: #1b1b1b;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 2px solid #333;
+  }
+  .section.disabled {
+    opacity: 0.5; /* 當前階段未啟用時，視覺上變暗 */
+    pointer-events: none; /* 禁用點擊 */
+  }
+
+  /* 檢查清單標題 */
+  .checklist-title {
+    font-size: 18px;
+    color: #ccc;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+  }
+  
+  /* 核取方塊樣式 */
+  label {
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    margin: 10px 0;
+  }
+  input[type="checkbox"] {
+    transform: scale(1.1);
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+
+  /* 最終操作指示框 (高亮綠色框框) */
+  #operationBox {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #1b1b1b;
+    color: #fff;
+    border-radius: 10px;
+    border: 3px solid #00c853; /* 高亮綠色邊框 */
+    box-shadow: 0 0 15px rgba(0, 200, 83, 0.7); /* 綠色光暈 */
+    display: none; /* 預設隱藏 */
+  }
+  #operationBox h3 {
+    color: #00c853;
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 20px;
+  }
+  #operationBox ol {
+    padding-left: 25px;
+    line-height: 1.8;
+    font-size: 16px;
+  }
+  #operationBox li strong {
+      color: #ffd700; /* 強調關鍵數值 */
+  }
+</style>
+</head>
+<body>
+  <h2>TCP 體外心臟節律器</h2>
+
+  <div class="section" id="stage1">
+    <div class="checklist-title">適應症檢查 (需全部符合)</div>
+    <label><input type="checkbox" class="chk-stage1"> 2°2以上房室傳導阻滯</label>
+    <label><input type="checkbox" class="chk-stage1"> 脈搏是否小於50</label>
+    <label><input type="checkbox" class="chk-stage1"> 生命徵象不穩定</label>
+  </div>
+
+  <div class="section disabled" id="stage2">
+    <div class="checklist-title">禁忌症與注意事項確認 (需全部確認)</div>
+    <label><input type="checkbox" class="chk-stage2"> 低體溫不得使用</label>
+    <label><input type="checkbox" class="chk-stage2"> 勿透過評估頸動脈來確認機械性擷取</label>
+    <label><input type="checkbox" class="chk-stage2"> 超過30分鐘可能會導致灼傷</label>
+  </div>
+
+  <div id="operationBox">
+    <h3>✅ 請開始進行操作</h3>
+    <ol>
+      <li>點選左下角『PACER』/『心律節律器』開始</li>
+      <li>預設頻率：<strong>70 bpm</strong>；預設輸出：<strong>30 mA</strong></li>
+      <li>透過右側上下鍵調整輸出（加10 / 減5）至達成 Capture</li>
+      <li>找出最低有效輸出後再加 10%（如 50mA → 設定為 55mA）（需關閉時，點選『關閉心律調節器』）</li>
+    </ol>
+  </div>
+
+<script>
+  const stage1Checkboxes = document.querySelectorAll('.chk-stage1');
+  const stage2Checkboxes = document.querySelectorAll('.chk-stage2');
+  const stage1 = document.getElementById('stage1');
+  const stage2 = document.getElementById('stage2');
+  const operationBox = document.getElementById('operationBox');
+
+  // ----------------------------------
+  // 函數：檢查特定階段是否全部完成
+  // ----------------------------------
+  function checkStageCompletion(checkboxes) {
+    return Array.from(checkboxes).every(c => c.checked);
+  }
+
+  // ----------------------------------
+  // 函數：更新整個頁面的狀態
+  // ----------------------------------
+  function updateState() {
+    const stage1Complete = checkStageCompletion(stage1Checkboxes);
+    const stage2Complete = checkStageCompletion(stage2Checkboxes);
+
+    // --- 邏輯 1: 控制階段二的啟用/禁用 ---
+    if (stage1Complete) {
+      stage2.classList.remove('disabled');
+    } else {
+      stage2.classList.add('disabled');
+      // 如果階段一被取消勾選，則強制隱藏操作步驟
+      operationBox.style.display = 'none';
+      // 確保階段二的勾選不會被記憶 (可選，讓流程更嚴謹)
+      stage2Checkboxes.forEach(c => c.checked = false);
+    }
+
+    // --- 邏輯 2: 控制最終操作步驟的顯示/隱藏 ---
+    if (stage1Complete && stage2Complete) {
+      operationBox.style.display = 'block';
+    } else {
+      operationBox.style.display = 'none';
+    }
+  }
+
+  // ----------------------------------
+  // 監聽器設定
+  // ----------------------------------
+  
+  // 監聽階段一的變化
+  stage1Checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', updateState);
+  });
+
+  // 監聽階段二的變化
+  stage2Checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', updateState);
+  });
+
+  // 初始狀態檢查
+  updateState();
+
+</script>
+</body>
+</html>
